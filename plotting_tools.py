@@ -252,7 +252,7 @@ def plot_events(event, fig=None, field_dimen = (106.0, 68), indicators = ["Marke
         ))
 
     if annotate:
-        textstring = f"{event["Type"]}: {event["From"]}"
+        textstring = f"{event['Type']}: {event['From']}"
         fig.add_annotation(
             x = event["Start X"],
             y = event["Start Y"],
