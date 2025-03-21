@@ -173,4 +173,4 @@ def update_graph(my_row, radio_btn):
 
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(debug = True)
