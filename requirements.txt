@@ -16,3 +16,5 @@ dash_ag_grid
 dash
 dash.dependencies
 dash_auth
+
+gunicorn
