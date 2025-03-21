@@ -1,5 +1,4 @@
 requests
-io
 matplotlib
 pandas
 numpy
