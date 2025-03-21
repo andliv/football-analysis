@@ -2,14 +2,11 @@ matplotlib.pyplot
 pandas
 numpy
 plotting_tools
-
 plotly.graph_objects
 plotly.express
-
 dash_bootstrap_components
 dash_ag_grid
 dash
 dash.dependencies
 dash_auth
-
 gunicorn
