@@ -6,7 +6,8 @@ import Metrica_EPV as mepv
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from plotting_tools import plot_pitch, plot_frame, plot_events, plot_pitchcontrol_for_event, plot_epv_for_event, plot_voronoi
+from plotting_tools import plot_pitch, plot_frame, plot_events, plot_pitchcontrol_for_event, plot_epv_for_event, plot_voronoi, plot_max_val_added
+import pickle
 
 import plotly.graph_objects as go
 import plotly.express as px
@@ -19,12 +20,11 @@ from dash.dependencies import Input, Output
 import dash_auth
 
 
-# DATADIR = "sample-data-master/data"
-# game_id = 2 # let's look at sample match 2
-
 file_id_events = "1rMsMlS-sipbvbk1WOCS2qUs4P3Soaoej"
 file_id_tracking_home = "1DZstm5Lq_Yqm5qJpgAoarhRzEarejrGF"
 file_id_tracking_away = "1CRL1Uwn53ITwMHb8mfWb4lpxOgdbusRF"
+file_id_pitch_control = "1Dd-82tYIDPd3Rahgxr7pVcIdfGbcVnvi"
+file_id_max_val = "1tqw2DpKvfuaVplt_V9unfcPSsS2clMJV"
 
 # READ IN EVENT DATA
 events = mio.read_event_data(file_id_events)
@@ -49,6 +49,7 @@ tracking_home = mvel.calc_player_velocities(tracking_home)
 tracking_away = mvel.calc_player_velocities(tracking_away)
 
 # READ IN EPV
+# epv_path = Path(__file__).parent.parent/"data"/"EPV_grid.csv"
 epv = mepv.load_EPV_grid("EPV_grid.csv")
 
 # READ MODEL PARAMS
@@ -57,10 +58,19 @@ params = mpc.default_model_params()
 # GET GOALKEEPER NRS
 gk_nrs = (mio.find_goalkeeper(tracking_home), mio.find_goalkeeper(tracking_away))
 
+# READ CACHED DATA
+# pitch_control_cache_path = Path(__file__).parent.parent/"data"/"pitch_control_cache.pkl"
+with open(file_id_pitch_control, "rb") as f:
+    pitch_control_cache_r = pickle.load(f)
+
+# max_val_added_cache_path = Path(__file__).parent.parent/"data"/"max_val_added_cache.pkl"
+with open(file_id_max_val, "rb") as f:
+    max_val_added_cache_r = pickle.load(f)
+
 fig = plot_pitch()
 fig = plot_frame(tracking_home.iloc[0], tracking_away.iloc[0], fig=fig, include_player_velocities=True)
 fig.update_layout(
-    autosize=True, height=500, width=900,  # Reduced height slightly
+    autosize=True, height=500, width=900,
     margin=dict(l=0, r=0, t=20, b=20), paper_bgcolor="#f8f9fa"
 )
 
@@ -71,7 +81,7 @@ VALID_USERNAME_PASSWORD_PAIRS = {
 secret_key = "andlinsecret123!"
 
 
-# Initialize Dash app with a modern theme
+# Initialize app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE])
 server = app.server
 auth = dash_auth.BasicAuth(
@@ -85,7 +95,7 @@ app.layout = dbc.Container(fluid=True, children=[
     dbc.Row([
         dbc.Col(html.H1("Football Decision Evaluator",
                         className="text-center text-primary fw-bold",
-                        style={"paddingTop": "15px"}  # Adds space above the title
+                        style={"paddingTop": "15px"}
                         ), width=12)
     ]),
 
@@ -102,19 +112,17 @@ app.layout = dbc.Container(fluid=True, children=[
 
     html.Br(),
 
-    # Side-by-side Table & Graph (Adjusted Heights)
     dbc.Row([
-        # Table Column (Shorter height)
         dbc.Col([
             dag.AgGrid(
                 id="grid",
                 rowData=events.to_dict("records"),
-                columnDefs=[{"field": i} for i in events.columns],  # Show all columns
+                columnDefs=[{"field": i} for i in events.columns],
                 dashGridOptions={"rowSelection": "single"},
                 defaultColDef={"filter": "agTextColumnFilter"},
                 style={"height": "350px", "width": "100%", "font-family": "Open Sans", "font-size": "14px"},
             ),
-            html.Br(),  # Space before radio buttons
+            html.Br(),
             dcc.RadioItems(
                 id="radio-button",
                 options=[
@@ -127,16 +135,15 @@ app.layout = dbc.Container(fluid=True, children=[
                 className="text-center",
                 style={"font-family": "Open Sans"}
             )
-        ], width=4),  # Table + Radio Buttons Column
+        ], width=4),
 
-        # Graph Column (Reduced height)
         dbc.Col([
             dcc.Graph(
                 figure=fig, id="graph1",
-                style={"width": "100%", "height": "500px"}  # Adjusted height
+                style={"width": "100%", "height": "500px"}
             )
-        ], width=8)  # Graph Column
-    ], className="mb-3")  # Adds spacing below
+        ], width=8)
+    ], className="mb-3")
 ])
 
 
@@ -148,7 +155,7 @@ def update_graph(my_row, radio_btn):
     fig = plot_pitch()
     fig = plot_frame(tracking_home.iloc[0], tracking_away.iloc[0], fig=fig, include_player_velocities=True)
     fig.update_layout(
-        autosize=True, height=500, width=900,  # Adjusted for full fit
+        autosize=True, height=500, width=900,
         margin=dict(l=0, r=0, t=20, b=20), paper_bgcolor="#f8f9fa"
     )
 
@@ -156,16 +163,30 @@ def update_graph(my_row, radio_btn):
         event_id = my_row[0]["event_id"]
 
         if radio_btn.strip() == "Expected Possession Value":
-            ppcf, xgrid, ygrid = mpc.generate_pitch_control_for_event(event_id, events, tracking_home, tracking_away, params, gk_nrs)
-            fig = plot_epv_for_event(event_id, events, tracking_home, tracking_away, ppcf, epv)
+            fig = plot_epv_for_event(event_id, events, tracking_home, tracking_away, pitch_control_cache_r.get(event_id), epv)
+
+            if event_id in max_val_added_cache_r:
+                fig = plot_max_val_added(fig, event_id, max_val_added_cache_r)
+            else:
+                print(f"Skipping event {event_id} as it is not in max_val_added_cache_r")
+            
         elif radio_btn.strip() == "Pitch Control":
-            ppcf, xgrid, ygrid = mpc.generate_pitch_control_for_event(event_id, events, tracking_home, tracking_away, params, gk_nrs)
-            fig = plot_pitchcontrol_for_event(event_id, events, tracking_home, tracking_away, ppcf)
+            fig = plot_pitchcontrol_for_event(event_id, events, tracking_home, tracking_away, pitch_control_cache_r.get(event_id))
+            
+            if event_id in max_val_added_cache_r:
+                fig = plot_max_val_added(fig, event_id, max_val_added_cache_r)
+            else:
+                print(f"Skipping event {event_id} as it is not in max_val_added_cache_r")
+        
         else:
             fig = plot_voronoi(fig, event_id, events, tracking_home, tracking_away)
-
+            if event_id in max_val_added_cache_r:
+                fig = plot_max_val_added(fig, event_id, max_val_added_cache_r)
+            else:
+                print(f"Skipping event {event_id} as it is not in max_val_added_cache_r")
+        
         fig.update_layout(
-            autosize=True, height=500, width=900,  # Adjusted to fit without scrolling
+            autosize=True, height=500, width=900,
             margin=dict(l=0, r=0, t=20, b=20), paper_bgcolor="#f8f9fa"
         )
 
