@@ -252,7 +252,7 @@ def plot_events(event, fig=None, field_dimen = (106.0, 68), indicators = ["Marke
         ))
 
     if annotate:
-        textstring = f"{event['Type']}: {event['From']}"
+        textstring = f"{event["Type"]}: {event["From"]}"
         fig.add_annotation(
             x = event["Start X"],
             y = event["Start Y"],
@@ -307,7 +307,6 @@ def plot_epv_for_event(event_id, events, tracking_home, tracking_away, PPCF, EPV
     # pick a pass at which to generate the pitch control surface
     pass_frame = events.loc[event_id]['Start Frame']
     pass_team = events.loc[event_id].Team
-    print(pass_team)
     
     # plot frame and event
     fig = plot_pitch(field_dimen = field_dimen)
@@ -344,5 +343,30 @@ def plot_epv_for_event(event_id, events, tracking_home, tracking_away, PPCF, EPV
         showscale=False,
         contours=dict(showlines=False)
     ))
+    
+    return fig
+
+def plot_max_val_added(fig, event_id, max_val_added_cache):
+    max_val_plot = max_val_added_cache.get(event_id)
+
+    x_vals = np.array(max_val_plot[1][0]) if np.ndim(max_val_plot[1][0]) > 0 else np.array([max_val_plot[1][0]])
+    y_vals = np.array(max_val_plot[1][1]) if np.ndim(max_val_plot[1][1]) > 0 else np.array([max_val_plot[1][1]])
+
+    z_vals = np.array(max_val_plot[0])
+    if z_vals.ndim == 1:  # Convert 1D array to 2D if needed
+        z_vals = z_vals.reshape(1, -1)
+
+    fig.add_trace(go.Scatter(
+            x=x_vals,
+            y=y_vals,
+            mode = "markers",
+            marker=dict(
+                    symbol="pentagon-open",
+                    size=12,
+                    line=dict(width=2)
+                ),
+            marker_color = "black",
+            hovertemplate=f"Max value added: %{z_vals.round(3)}"
+        ))
     
     return fig
