@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from plotting_tools import plot_pitch, plot_frame, plot_events, plot_pitchcontrol_for_event, plot_epv_for_event, plot_voronoi, plot_max_val_added
 import pickle
+import gdown
 
 import plotly.graph_objects as go
 import plotly.express as px
@@ -60,11 +61,20 @@ gk_nrs = (mio.find_goalkeeper(tracking_home), mio.find_goalkeeper(tracking_away)
 
 # READ CACHED DATA
 # pitch_control_cache_path = Path(__file__).parent.parent/"data"/"pitch_control_cache.pkl"
-with open(file_id_pitch_control, "rb") as f:
+file_id = "82tYIDPd3Rahgxr7pVcIdfGbcVnvi"
+output_pitch_control = "data.pkl"
+gdown.download(f"https://drive.google.com/uc?id={file_id}", output_pitch_control, quiet=False)
+
+# Load the pickle file
+with open(output_pitch_control, "rb") as f:
     pitch_control_cache_r = pickle.load(f)
 
+file_id = "1tqw2DpKvfuaVplt_V9unfcPSsS2clMJV"
+output_max_val = "data.pkl"
+gdown.download(f"https://drive.google.com/uc?id={file_id}", output_max_val, quiet=False)
+
 # max_val_added_cache_path = Path(__file__).parent.parent/"data"/"max_val_added_cache.pkl"
-with open(file_id_max_val, "rb") as f:
+with open(output_max_val, "rb") as f:
     max_val_added_cache_r = pickle.load(f)
 
 fig = plot_pitch()
