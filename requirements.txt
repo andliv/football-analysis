@@ -10,5 +10,4 @@ dash_ag_grid
 dash
 dash_auth
 gdown
-pickle
 gunicorn
