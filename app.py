@@ -63,7 +63,8 @@ gk_nrs = (mio.find_goalkeeper(tracking_home), mio.find_goalkeeper(tracking_away)
 # pitch_control_cache_path = Path(__file__).parent.parent/"data"/"pitch_control_cache.pkl"
 file_id = "82tYIDPd3Rahgxr7pVcIdfGbcVnvi"
 output_pitch_control = "data.pkl"
-gdown.download(f"https://drive.google.com/uc?id={file_id}", output_pitch_control, quiet=False)
+#gdown.download(f"https://drive.google.com/uc?id={file_id}", output_pitch_control, quiet=False)
+gdown.download("https://drive.google.com/file/d/1Dd-82tYIDPd3Rahgxr7pVcIdfGbcVnvi/view?usp=drive_link", output_pitch_control, quiet=False)
 
 # Load the pickle file
 with open(output_pitch_control, "rb") as f:
@@ -71,7 +72,8 @@ with open(output_pitch_control, "rb") as f:
 
 file_id = "1tqw2DpKvfuaVplt_V9unfcPSsS2clMJV"
 output_max_val = "data.pkl"
-gdown.download(f"https://drive.google.com/uc?id={file_id}", output_max_val, quiet=False)
+#gdown.download(f"https://drive.google.com/uc?id={file_id}", output_max_val, quiet=False)
+gdown.download("https://drive.google.com/file/d/1tqw2DpKvfuaVplt_V9unfcPSsS2clMJV/view?usp=drive_link", output_pitch_control, quiet=False)
 
 # max_val_added_cache_path = Path(__file__).parent.parent/"data"/"max_val_added_cache.pkl"
 with open(output_max_val, "rb") as f:
